@@ -183,12 +183,6 @@ async def chat(request: Request):
     """SSE 流式对话接口 (后台线程队列架构, 防止事件循环阻塞)"""
     global llm, model_loaded
 
-    if not model_loaded or llm is None:
-        return JSONResponse(
-            {"error": "模型未加载,请先运行 download_model.py 下载模型"},
-            status_code=503
-        )
-
     data = await request.json()
 
     # ============ 双格式参数兼容 ============
@@ -199,7 +193,6 @@ async def chat(request: Request):
         temperature = float(data.get("temperature", 0.7))
         max_tokens = int(data.get("max_tokens", 2048))
         system_prompt_override = data.get("system_prompt", None)
-        use_delta = False  # OpenAI/QwenChat 风格返回 {content}
         messages = []
         if system_prompt_override:
             messages.append({"role": "system", "content": system_prompt_override})
@@ -209,15 +202,38 @@ async def chat(request: Request):
             if role in ("system", "user", "assistant"):
                 messages.append({"role": role, "content": content})
         messages = _fit_messages_to_context(messages)
+        user_input = messages[-1].get("content", "") if messages else ""
     else:
         user_input = data.get("message", "").strip()
         history = data.get("history", [])
         temperature = 0.7
         max_tokens = 2048
-        use_delta = True  # DeepSeekChat 前端返回 {delta}? 不,统一返回 content, 前端兼容两种
         if not user_input:
             return JSONResponse({"error": "消息不能为空"}, status_code=400)
         messages = build_messages(user_input, history)
+
+    # ============ 技能指令拦截 (>> 前缀) ============
+    if user_input.startswith(">>"):
+        skill_result = _execute_skill(user_input)
+        if skill_result is not None:
+            # 以 SSE 流式返回技能执行结果
+            async def skill_stream():
+                for line in skill_result.split("\n"):
+                    yield f"data: {json.dumps({'content': line + chr(10), 'delta': line + chr(10)}, ensure_ascii=False)}\n\n"
+                    await asyncio.sleep(0.005)
+                yield f"data: {json.dumps({'done': True}, ensure_ascii=False)}\n\n"
+            return StreamingResponse(
+                skill_stream(),
+                media_type="text/event-stream",
+                headers={"Cache-Control": "no-cache", "Connection": "keep-alive",
+                         "Keep-Alive": "timeout=300", "X-Accel-Buffering": "no"},
+            )
+
+    if not model_loaded or llm is None:
+        return JSONResponse(
+            {"error": "模型未加载,请先运行 download_model.py 下载模型"},
+            status_code=503
+        )
 
     # ============ 后台推理线程 + Queue 非阻塞架构 ============
     q: _queue.Queue = _queue.Queue()
@@ -297,7 +313,7 @@ async def list_models():
 
 
 # =====================================================================
-# 白帽渗透测试工具 API  (仅用于合法授权的安全测试)
+# 渗透测试工具 API
 # =====================================================================
 from pentest import DISCLAIMER
 from pentest.utils import (
@@ -309,17 +325,509 @@ from pentest import recon_tools, vuln_scanner, vuln_exploits, waf_bypass
 
 
 def _ok(data=None, msg="ok"):
-    return {"ok": True, "msg": msg, "disclaimer": DISCLAIMER.strip(), "data": data}
+    return {"ok": True, "msg": msg, "data": data}
 
 def _err(msg, code=400):
     from fastapi.responses import JSONResponse
-    return JSONResponse({"ok": False, "msg": msg, "disclaimer": DISCLAIMER.strip()}, status_code=code)
+    return JSONResponse({"ok": False, "msg": msg}, status_code=code)
 
 
-@app.get("/api/pentest/disclaimer")
-async def pentest_disclaimer():
-    """获取法律免责声明"""
-    return {"disclaimer": DISCLAIMER.strip()}
+# =====================================================================
+# 技能指令系统 (在对话中通过 >> 前缀调用渗透工具)
+# =====================================================================
+SKILL_HELP = """
+╔══════════════════════════════════════════════════════════════╗
+║              🛡️ 白帽渗透测试技能指令速查表                    ║
+╠══════════════════════════════════════════════════════════════╣
+║                                                                ║
+║  【侦察类】                                                    ║
+║  >>帮助              显示本帮助                                 ║
+║  >>whois <域名>      Whois/DNS/Ping 信息收集                   ║
+║  >>子域名 <域名>     子域名爆破 + CT证书透明度日志              ║
+║  >>端口 <主机>       TCP端口扫描 + Banner抓取                  ║
+║  >>目录 <URL>        目录/敏感文件/路径爆破                     ║
+║  >>指纹 <URL>        CMS/中间件/WAF 指纹识别                    ║
+║  >>爆破 <URL>        HTTP弱口令爆破 (表单/Basic)               ║
+║  >>全量侦察 <目标>   一键全量 (子域+端口+目录+指纹)            ║
+║                                                                ║
+║  【漏洞扫描类】                                                ║
+║  >>扫描 <URL>                    一键全部漏洞扫描              ║
+║  >>扫描 sqli <URL>               SQL注入检测                   ║
+║  >>扫描 xss <URL>                XSS检测                       ║
+║  >>扫描 rce <URL>                命令注入/RCE检测              ║
+║  >>扫描 ssti <URL>               SSTI模板注入检测              ║
+║  >>扫描 ssrf <URL> <参数名>      SSRF检测                      ║
+║  >>扫描 lfi <URL> <参数名>       目录遍历/LFI检测              ║
+║  >>扫描 xxe <URL>                XXE检测                       ║
+║  >>扫描 unauth <URL>             未授权端点检测                ║
+║  >>扫描 middleware <URL>         中间件解析漏洞                ║
+║  >>扫描 info <URL>               信息泄漏检测                  ║
+║  >>扫描 deserialize <URL>        反序列化CVE指纹               ║
+║  >>扫描 upload <上传URL>         文件上传漏洞检测              ║
+║                                                                ║
+║  【漏洞利用库】                                                ║
+║  >>利用                显示全部漏洞利用链                      ║
+║  >>利用 SQLi           SQL注入完整利用链 (8步+Payload)         ║
+║  >>利用 XSS            XSS 8阶段利用链                         ║
+║  >>利用 SSRF           SSRF 8阶段利用链                        ║
+║  >>利用 RCE            RCE 7步利用链                           ║
+║  >>利用 SSTI           SSTI 7种模板引擎RCE                    ║
+║  >>利用 FileUpload     19种上传绕过技术                        ║
+║  >>利用 CVE            Shiro550/Log4Shell等一键CVE             ║
+║                                                                ║
+║  【WAF绕过库】                                                 ║
+║  >>绕过                显示全部WAF绕过技术                     ║
+║  >>绕过 SQLi           SQL注入WAF绕过                          ║
+║  >>绕过 XSS            XSS WAF绕过                             ║
+║  >>绕过 RCE            RCE WAF绕过                             ║
+║  >>绕过 SSTI           SSTI WAF绕过                            ║
+║  >>绕过 SSRF           SSRF WAF绕过                            ║
+║  >>绕过 Upload         上传WAF绕过                             ║
+║  >>绕过 LFI            LFI WAF绕过                             ║
+║  >>绕过 通用           通用HTTP层绕过                          ║
+║  >>绕过生成 <payload>  自动生成WAF绕过变体                     ║
+║                                                                ║
+║  >>工具                显示工具API速查表                       ║
+╚══════════════════════════════════════════════════════════════╝
+"""
+
+
+def _execute_skill(cmd_line: str):
+    """解析并执行 >> 前缀的技能指令, 返回文本结果或 None"""
+    text = cmd_line[2:].strip()
+    if not text:
+        return SKILL_HELP
+
+    parts = text.split(None, 1)
+    cmd = parts[0].lower()
+    arg = parts[1].strip() if len(parts) > 1 else ""
+
+    try:
+        # ---- 帮助 ----
+        if cmd in ("帮助", "help", "?", "h"):
+            return SKILL_HELP
+
+        # ---- 工具列表 ----
+        if cmd in ("工具", "tools", "tool"):
+            return _skill_tools_list()
+
+        # ---- Whois ----
+        if cmd in ("whois", "域名信息"):
+            if not arg:
+                return "❌ 用法: >>whois <域名>\n例: >>whois baidu.com"
+            return _skill_whois(arg)
+
+        # ---- 子域名 ----
+        if cmd in ("子域名", "subdomain", "sub"):
+            if not arg:
+                return "❌ 用法: >>子域名 <域名>\n例: >>子域名 baidu.com"
+            return _skill_subdomain(arg)
+
+        # ---- 端口扫描 ----
+        if cmd in ("端口", "port", "端口扫描"):
+            if not arg:
+                return "❌ 用法: >>端口 <主机/IP>\n例: >>端口 127.0.0.1"
+            return _skill_port(arg)
+
+        # ---- 目录扫描 ----
+        if cmd in ("目录", "dir", "目录扫描"):
+            if not arg:
+                return "❌ 用法: >>目录 <URL>\n例: >>目录 http://target.com"
+            return _skill_dir(arg)
+
+        # ---- 指纹 ----
+        if cmd in ("指纹", "fingerprint", "fp"):
+            if not arg:
+                return "❌ 用法: >>指纹 <URL>\n例: >>指纹 http://target.com"
+            return _skill_fingerprint(arg)
+
+        # ---- 爆破 ----
+        if cmd in ("爆破", "brute"):
+            if not arg:
+                return "❌ 用法: >>爆破 <URL>\n例: >>爆破 http://target.com/login.php"
+            return _skill_brute(arg)
+
+        # ---- 全量侦察 ----
+        if cmd in ("全量侦察", "full", "全量"):
+            if not arg:
+                return "❌ 用法: >>全量侦察 <目标>\n例: >>全量侦察 baidu.com"
+            return _skill_full_recon(arg)
+
+        # ---- 漏洞扫描 ----
+        if cmd in ("扫描", "scan"):
+            return _skill_scan(arg)
+
+        # ---- 漏洞利用库 ----
+        if cmd in ("利用", "exploit", "exp"):
+            return _skill_exploit(arg)
+
+        # ---- WAF绕过 ----
+        if cmd in ("绕过", "bypass"):
+            return _skill_bypass(arg)
+
+        # ---- 绕过变体生成 ----
+        if cmd in ("绕过生成", "bypass_gen", "变体"):
+            if not arg:
+                return "❌ 用法: >>绕过生成 <payload>\n例: >>绕过生成 1' union select 1,2,3--"
+            return _skill_bypass_gen(arg)
+
+        return f"❌ 未知指令: >>{cmd}\n输入 >>帮助 查看所有可用指令"
+
+    except Exception as e:
+        return f"❌ 执行失败: {e}"
+
+
+def _skill_whois(target: str) -> str:
+    r = recon_tools.whois_domain(target)
+    lines = [f"🔍 Whois 信息收集: {target}", "=" * 55]
+    lines.append(f"DNS解析: {', '.join(r.get('dns', [])) or '无'}")
+    rev = r.get('reverse', {})
+    if rev:
+        lines.append(f"反向解析: {rev}")
+    ping_ms = r.get('ping_ms')
+    lines.append(f"TCP Ping: {f'{ping_ms:.1f} ms' if ping_ms else '超时'}")
+    if r.get('rdap'):
+        lines.append(f"RDAP: {r['rdap']}")
+    return "\n".join(lines)
+
+
+def _skill_subdomain(domain: str) -> str:
+    lines = [f"🔍 子域名扫描: {domain}", "⏳ 正在扫描 (可能需要30s-2min)...", "=" * 55]
+    results = recon_tools.subdomain_scan(domain)
+    if not results:
+        return f"🔍 子域名扫描: {domain}\n未发现子域名。"
+    lines.append(f"发现 {len(results)} 个子域名:\n")
+    lines.append(f"{'子域名':<35} {'IP':<16} {'状态':<6} {'标题'}")
+    lines.append("-" * 90)
+    for r in results[:200]:
+        lines.append(f"{r.get('subdomain',''):<35} {str(r.get('ip','-')):<16} {str(r.get('status',0)):<6} {(r.get('title','') or '')[:40]}")
+    if len(results) > 200:
+        lines.append(f"\n... 共 {len(results)} 条,仅显示前200条")
+    return "\n".join(lines)
+
+
+def _skill_port(host: str) -> str:
+    lines = [f"🔍 端口扫描: {host}", "⏳ 正在扫描 Top 80 端口...", "=" * 55]
+    results = recon_tools.port_scan(host, top_n=80, max_workers=80, timeout=1.5, banner=True)
+    if not results:
+        return f"🔍 端口扫描: {host}\n无开放端口。"
+    lines.append(f"开放端口 {len(results)} 个:\n")
+    lines.append(f"{'端口':<8} {'服务':<15} {'Banner/指纹'}")
+    lines.append("-" * 80)
+    for r in results:
+        banner = (r.get('banner', '') or '')[:60]
+        lines.append(f"{r.get('port',''):<8} {r.get('service','-'):<15} {banner}")
+    return "\n".join(lines)
+
+
+def _skill_dir(url: str) -> str:
+    lines = [f"🔍 目录扫描: {url}", "⏳ 正在爆破目录...", "=" * 55]
+    results = recon_tools.dir_scan(url, max_workers=30, timeout=5)
+    if not results:
+        return f"🔍 目录扫描: {url}\n未发现有效路径。"
+    lines.append(f"命中路径 {len(results)} 个:\n")
+    lines.append(f"{'状态':<6} {'路径':<40} {'长度':<8} {'标题'}")
+    lines.append("-" * 85)
+    for r in results[:200]:
+        lines.append(f"{r.get('status',''):<6} {r.get('path',''):<40} {str(r.get('length',0)):<8} {(r.get('title','') or '')[:30]}")
+    if len(results) > 200:
+        lines.append(f"\n... 共 {len(results)} 条,仅显示前200条")
+    return "\n".join(lines)
+
+
+def _skill_fingerprint(url: str) -> str:
+    r = recon_tools.fingerprint(url)
+    lines = [f"🔍 指纹识别: {url}", "=" * 55]
+    lines.append(f"HTTP状态: {r.get('status', 0)}")
+    lines.append(f"标题: {r.get('title', '-')}")
+    lines.append(f"Server: {r.get('server_header', '-')}")
+    lines.append(f"X-Powered-By: {r.get('x_powered', '-')}")
+    cms = r.get('cms', [])
+    lines.append(f"CMS: {', '.join(cms) if cms else '未识别'}")
+    mw = r.get('middleware', [])
+    lines.append(f"中间件: {', '.join(mw) if mw else '未识别'}")
+    waf = r.get('waf', [])
+    lines.append(f"WAF: {', '.join(waf) if waf else '未检测到'}")
+    cookies = r.get('cookies', [])
+    if cookies:
+        lines.append(f"Cookies: {', '.join(cookies)}")
+    probes = r.get('extra_probes', [])
+    if probes:
+        lines.append(f"\n额外探测:")
+        for p in probes:
+            lines.append(f"  ✅ {p}")
+    return "\n".join(lines)
+
+
+def _skill_brute(url: str) -> str:
+    lines = [f"🔍 弱口令爆破: {url}", "⏳ 正在爆破 (默认字典)...", "=" * 55]
+    result = recon_tools.brute_http_form(url, stop_on_first=True, max_workers=10)
+    hits = result if isinstance(result, list) else result.get('results', [])
+    if not hits:
+        return f"🔍 弱口令爆破: {url}\n未爆破出有效凭据。\n提示: 默认字典较小,可尝试自定义账号密码。"
+    lines.append(f"爆破命中 {len(hits)} 条:\n")
+    lines.append(f"{'账号':<20} {'密码':<20} {'状态':<6} {'长度'}")
+    lines.append("-" * 60)
+    for h in hits:
+        lines.append(f"{h.get('username',h.get('user','')):<20} {h.get('password',h.get('pass','')):<20} {h.get('status',''):<6} {h.get('length','')}")
+    return "\n".join(lines)
+
+
+def _skill_full_recon(target: str) -> str:
+    lines = [f"🔍 全量侦察: {target}", "⏳ 正在执行 (预计2-5分钟,请勿刷新)...", "=" * 55]
+    opts = {"sub": True, "port": True, "dir": True, "port_top_n": 50}
+    data = recon_tools.full_recon(target, opts=opts)
+    lines.append("\n--- Whois / Ping ---")
+    wh = data.get('whois', {})
+    if wh:
+        lines.append(f"DNS: {', '.join(wh.get('dns', []))}")
+        lines.append(f"Ping: {wh.get('ping_ms', '超时')}")
+    subs = data.get('subdomains', [])
+    lines.append(f"\n--- 子域名 ({len(subs)} 个) ---")
+    for s in subs[:30]:
+        lines.append(f"  {s.get('subdomain',''):<30} {s.get('ip',''):<16} {s.get('status',0)}")
+    if len(subs) > 30:
+        lines.append(f"  ... 共{len(subs)}条")
+    ports = data.get('ports', [])
+    lines.append(f"\n--- 开放端口 ({len(ports)} 个) ---")
+    for p in ports[:30]:
+        lines.append(f"  {p.get('port',''):<8} {p.get('service','-'):<15} {(p.get('banner','') or '')[:40]}")
+    if len(ports) > 30:
+        lines.append(f"  ... 共{len(ports)}条")
+    fp = data.get('fingerprint', {})
+    lines.append(f"\n--- 指纹 ---")
+    if fp:
+        lines.append(f"  Server: {fp.get('server_header','-')}")
+        lines.append(f"  CMS: {', '.join(fp.get('cms',[])) or '-'}")
+        lines.append(f"  WAF: {', '.join(fp.get('waf',[])) or '-'}")
+    dirs = data.get('dirscan', [])
+    lines.append(f"\n--- 目录/敏感文件 ({len(dirs)} 个) ---")
+    for d in dirs[:30]:
+        lines.append(f"  {d.get('status',''):<6} {d.get('path','')}")
+    if len(dirs) > 30:
+        lines.append(f"  ... 共{len(dirs)}条")
+    return "\n".join(lines)
+
+
+def _skill_scan(arg: str) -> str:
+    parts = arg.split(None, 1)
+    # 判断第一个参数是否是扫描类型
+    scan_types = {"sqli", "xss", "rce", "ssti", "ssrf", "lfi", "xxe", "unauth",
+                  "middleware", "info", "deserialize", "upload", "all", "全部"}
+    if parts and parts[0].lower() in scan_types:
+        tp = parts[0].lower()
+        rest = parts[1].strip() if len(parts) > 1 else ""
+    else:
+        tp = "all"
+        rest = arg.strip()
+
+    if not rest:
+        return ("❌ 用法:\n"
+                "  >>扫描 <URL>           一键全部扫描\n"
+                "  >>扫描 sqli <URL>      SQL注入\n"
+                "  >>扫描 xss <URL>       XSS\n"
+                "  >>扫描 rce <URL>       RCE\n"
+                "  >>扫描 ssti <URL>      SSTI\n"
+                "  >>扫描 ssrf <URL> <参数名>\n"
+                "  >>扫描 lfi <URL> <参数名>\n"
+                "  >>扫描 unauth <URL>    未授权\n"
+                "  >>扫描 upload <上传URL>\n"
+                "  类型: sqli/xss/rce/ssti/ssrf/lfi/xxe/unauth/middleware/info/deserialize/upload/all")
+
+    # 解析参数
+    url_parts = rest.split(None, 1)
+    url = url_parts[0]
+    param = url_parts[1].strip() if len(url_parts) > 1 else ""
+
+    if tp == "all" or tp == "全部":
+        lines = [f"💉 漏洞全量扫描: {url}", "⏳ 正在扫描所有漏洞类型 (可能需要1-3分钟)...", "=" * 55]
+        extra = {}
+        if param:
+            extra["ssrf_param"] = param
+            extra["lfi_param"] = param
+        results = vuln_scanner.scan_all(url, params=extra, threads=10)
+        return _format_scan_results(url, results, "全量扫描")
+
+    name_map = {
+        "sqli": "SQL注入", "xss": "XSS", "rce": "命令注入RCE", "ssti": "SSTI模板注入",
+        "ssrf": "SSRF", "lfi": "LFI/目录遍历", "xxe": "XXE",
+        "unauth": "未授权端点", "middleware": "中间件解析漏洞",
+        "info": "信息泄漏", "deserialize": "反序列化/CVE指纹",
+    }
+
+    fn_map = {
+        "sqli": lambda: vuln_scanner.scan_sqli(url),
+        "xss": lambda: vuln_scanner.scan_xss(url),
+        "rce": lambda: vuln_scanner.scan_rce(url),
+        "ssti": lambda: vuln_scanner.scan_ssti(url),
+        "ssrf": lambda: vuln_scanner.scan_ssrf(url, param or "url"),
+        "lfi": lambda: vuln_scanner.scan_lfi(url, param or "file"),
+        "xxe": lambda: vuln_scanner.scan_xxe(url),
+        "unauth": lambda: vuln_scanner.scan_unauth_endpoints(url),
+        "middleware": lambda: vuln_scanner.scan_middleware(url),
+        "info": lambda: vuln_scanner.scan_info(url),
+        "deserialize": lambda: vuln_scanner.scan_deserialize(url),
+    }
+
+    if tp == "upload":
+        lines = [f"💉 文件上传漏洞检测: {url}", "⏳ 正在检测...", "=" * 55]
+        results = vuln_scanner.scan_file_upload(url, "file")
+        return _format_scan_results(url, results, "文件上传")
+
+    if tp in fn_map:
+        lines = [f"💉 {name_map.get(tp, tp)} 检测: {url}", "⏳ 正在检测...", "=" * 55]
+        try:
+            results = fn_map[tp]()
+            return _format_scan_results(url, results, name_map.get(tp, tp))
+        except Exception as e:
+            return f"💉 {name_map.get(tp, tp)} 检测: {url}\n❌ 执行失败: {e}"
+
+    return f"❌ 不支持的扫描类型: {tp}"
+
+
+def _format_scan_results(url: str, results, scan_name: str) -> str:
+    if not results:
+        return f"💉 {scan_name}: {url}\n✅ 扫描完成,未检测到漏洞。"
+    vuln = [r for r in results if isinstance(r, dict) and r.get('is_vuln')]
+    info = [r for r in results if isinstance(r, dict) and not r.get('is_vuln')]
+    lines = [f"💉 {scan_name}: {url}", "=" * 55]
+    lines.append(f"漏洞命中: {len(vuln)} 个 | 信息/失败: {len(info)} 个\n")
+    if vuln:
+        lines.append("🔴 漏洞命中:")
+        lines.append(f"{'风险':<8} {'名称':<25} {'证据'}")
+        lines.append("-" * 80)
+        for v in vuln:
+            sev = v.get('severity', 'info').upper()
+            name = (v.get('name') or v.get('scanner') or v.get('category') or '')[:24]
+            evidence = (v.get('evidence') or v.get('error') or '')[:50]
+            lines.append(f"{sev:<8} {name:<25} {evidence}")
+    if info:
+        lines.append(f"\n⚪ 信息/未命中 ({len(info)} 条,显示前20):")
+        for v in info[:20]:
+            name = (v.get('name') or v.get('scanner') or v.get('category') or '')[:24]
+            lines.append(f"  - {name}")
+    return "\n".join(lines)
+
+
+def _skill_exploit(arg: str) -> str:
+    q = arg.strip() if arg else None
+    data = vuln_exploits.get_exploit(q)
+    if not data:
+        return f"📚 漏洞利用库: 未匹配到 '{q}'\n可搜索: SQLi / XSS / SSRF / RCE / SSTI / FileUpload / CVE"
+    lines = [f"📚 漏洞利用代码库 ({len(data)} 条匹配)", "=" * 55]
+    for i, e in enumerate(data, 1):
+        lines.append(f"\n{'─'*55}")
+        lines.append(f"[{i}] {e.get('title', '')}")
+        sev = e.get('severity', '')
+        cvss = e.get('cvss', '')
+        cve = e.get('cve', '')
+        lines.append(f"  风险: {sev} | CVSS: {cvss} | {cve} | 分类: {e.get('category','')}")
+        if e.get('affected'):
+            lines.append(f"  影响范围: {e['affected']}")
+        if e.get('overview'):
+            lines.append(f"  概述: {e['overview']}")
+        if e.get('detection'):
+            lines.append(f"  检测方式: {e['detection']}")
+        steps = e.get('exploit_steps', [])
+        if steps:
+            lines.append(f"  📋 利用步骤 ({len(steps)} 步):")
+            for s in steps:
+                lines.append(f"    • {s}")
+        payloads = e.get('payloads', {})
+        if payloads:
+            lines.append(f"  💉 Payload 字典 ({len(payloads)} 个):")
+            for k, v in payloads.items():
+                lines.append(f"    [{k}]")
+                lines.append(f"      {v}")
+        techs = e.get('techniques', [])
+        if techs:
+            lines.append(f"  🔧 利用技术 ({len(techs)} 项):")
+            for t in techs:
+                lines.append(f"    ▸ {t.get('title','')}")
+                if t.get('principle'):
+                    lines.append(f"      原理: {t['principle']}")
+                if t.get('example'):
+                    lines.append(f"      示例: {t['example']}")
+        bypass = e.get('bypass_tips', [])
+        if bypass:
+            lines.append(f"  🔥 WAF绕过提示 ({len(bypass)} 条):")
+            for b in bypass:
+                lines.append(f"    • {b}")
+        post = e.get('post_exploitation', [])
+        if post:
+            lines.append(f"  📌 后利用 ({len(post)} 条):")
+            for p in post:
+                lines.append(f"    • {p}")
+        refs = e.get('references', [])
+        if refs:
+            lines.append(f"  🔗 参考:")
+            for r in refs:
+                lines.append(f"    {r}")
+    return "\n".join(lines)
+
+
+def _skill_bypass(arg: str) -> str:
+    q = arg.strip() if arg else None
+    cats = waf_bypass.get_bypass(q)
+    if not cats:
+        return f"🔥 WAF绕过库: 未匹配到 '{q}'\n可搜索: 通用 / SQLi / XSS / RCE / SSTI / SSRF / Upload / LFI"
+    lines = [f"🔥 WAF绕过技术库 ({len(cats)} 个分类)", "=" * 55]
+    for c in cats:
+        lines.append(f"\n{'─'*55}")
+        lines.append(f"📂 {c.get('name', '')}")
+        if c.get('desc'):
+            lines.append(f"  {c['desc']}")
+        techs = c.get('techniques', [])
+        if techs:
+            lines.append(f"  🔧 绕过技术 ({len(techs)} 项):")
+            for t in techs:
+                lines.append(f"    ▸ {t.get('title','')}")
+                if t.get('principle'):
+                    lines.append(f"      原理: {t['principle']}")
+                if t.get('example'):
+                    lines.append(f"      示例: {t['example']}")
+        payloads = c.get('payloads', [])
+        if payloads:
+            show = payloads[:30]
+            lines.append(f"  💉 Payload 样例 ({len(payloads)} 个,显示前{len(show)}):")
+            for p in show:
+                lines.append(f"    {p}")
+    return "\n".join(lines)
+
+
+def _skill_bypass_gen(payload: str) -> str:
+    variants = waf_bypass.generate_payload_variants(payload, max_depth=2)
+    lines = [f"🔥 WAF绕过变体生成", f"原始Payload: {payload}", f"生成变体: {len(variants)} 个", "=" * 55]
+    for i, v in enumerate(variants[:200], 1):
+        lines.append(f"  [{i:>3}] {v}")
+    if len(variants) > 200:
+        lines.append(f"\n... 共 {len(variants)} 个变体,仅显示前200个")
+    lines.append("\n💡 提示: 逐个尝试,观察WAF拦截与响应变化定位可绕过的形式。")
+    return "\n".join(lines)
+
+
+def _skill_tools_list() -> str:
+    lines = ["📦 渗透工具API速查表", "=" * 55]
+    lines.append("\n所有API前缀: /api/pentest/")
+    lines.append("返回格式: { ok, msg, disclaimer, data }")
+    lines.append("\n🔍 侦察 Recon:")
+    lines.append("  POST /api/pentest/recon/whois       {target}")
+    lines.append("  POST /api/pentest/recon/subdomain   {target, sub_list?, workers?}")
+    lines.append("  POST /api/pentest/recon/port        {target, ports?, top_n?, workers?}")
+    lines.append("  POST /api/pentest/recon/dir         {target, paths?, ext?, workers?}")
+    lines.append("  POST /api/pentest/recon/fingerprint {target}")
+    lines.append("  POST /api/pentest/recon/brute       {url, mode, users?, passwords?}")
+    lines.append("  POST /api/pentest/recon/full        {target, sub?, port?, dir?}")
+    lines.append("\n💉 漏洞扫描 Scan:")
+    lines.append("  POST /api/pentest/scan  {target, type, param?, upload_url?, threads?}")
+    lines.append("  类型: sqli/xss/rce/ssti/ssrf/lfi/xxe/unauth/middleware/info/deserialize/upload/all")
+    lines.append("\n⚔️ 漏洞利用库 Exploits:")
+    lines.append("  GET  /api/pentest/exploits           全量")
+    lines.append("  POST /api/pentest/exploits           {query: 'SQLi'}")
+    lines.append("\n🔥 WAF绕过 Bypass:")
+    lines.append("  GET  /api/pentest/bypass             全量")
+    lines.append("  POST /api/pentest/bypass             {category?, payload?, depth?}")
+    return "\n".join(lines)
 
 
 # ============ 1. 侦察 Recon 工具 ============
