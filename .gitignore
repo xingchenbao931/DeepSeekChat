@@ -1,0 +1,43 @@
+# DeepSeekChat - .gitignore
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+*.spec.bak
+
+# PyInstaller
+*.manifest
+
+# 模型文件 (体积大,不入库)
+models/*.gguf
+models/*.bin
+models/*.safetensors
+
+# 对话历史
+history.json
+*.log
+
+# 虚拟环境
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 系统
+Thumbs.db
+.DS_Store
+
+# 配置
+config.ini
+.env
