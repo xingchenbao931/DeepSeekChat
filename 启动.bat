@@ -13,8 +13,10 @@ if not exist "%PYTHON%" (
     set PYTHON=python
 )
 
-REM 检查模型是否存在
-if not exist "models\DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf" (
+REM 检查模型是否存在 (扫描 models 目录下任意 .gguf 文件)
+set HAS_MODEL=0
+if exist "models\*.gguf" set HAS_MODEL=1
+if "%HAS_MODEL%"=="0" (
     echo [警告] 未找到模型文件!
     echo 正在运行模型下载脚本...
     echo.

@@ -242,36 +242,658 @@
             margin-bottom: 12px;
             font-weight: normal;
         }
+
+        /* ============ 视图切换 Tab ============ */
+        .view-tabs {
+            display: flex;
+            gap: 4px;
+        }
+        .view-tab {
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: 1px solid #00d4ff44;
+            background: #0d1117;
+            color: #00d4ff;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        .view-tab:hover { background: #00d4ff22; }
+        .view-tab.active {
+            background: #00d4ff;
+            color: #0a0e14;
+            border-color: #00d4ff;
+            box-shadow: 0 0 10px #00d4ff88;
+        }
+        .view-tab.pentest-tab {
+            border-color: #ff6b0088;
+            color: #ff8833;
+        }
+        .view-tab.pentest-tab.active {
+            background: #ff6b00;
+            color: #fff;
+            border-color: #ff6b00;
+            box-shadow: 0 0 10px #ff6b0088;
+        }
+
+        /* ============ 渗透工具面板 (浅色 白底黑字) ============ */
+        .view-panel { display: none; flex: 1; overflow: hidden; }
+        .view-panel.active { display: flex; flex-direction: column; }
+
+        .pentest-panel {
+            flex: 1;
+            overflow: auto;
+            background: #ffffff;
+            color: #111;
+            font-family: -apple-system, BlinkMacSystemFont, "Microsoft YaHei", "PingFang SC", sans-serif;
+        }
+        .pentest-panel::-webkit-scrollbar { width: 10px; height: 10px; }
+        .pentest-panel::-webkit-scrollbar-track { background: #f2f2f2; }
+        .pentest-panel::-webkit-scrollbar-thumb { background: #c5c5c5; border-radius: 5px; }
+        .pentest-panel::-webkit-scrollbar-thumb:hover { background: #888; }
+
+        .pentest-wrap {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 32px;
+        }
+
+        .pentest-title {
+            font-size: 22px;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+        .pentest-subtitle {
+            font-size: 13px;
+            color: #555;
+            margin-bottom: 22px;
+            line-height: 1.8;
+            padding: 10px 14px;
+            background: #fff8e6;
+            border-left: 4px solid #ffc107;
+            border-radius: 2px;
+        }
+
+        /* 子分类Tab */
+        .pt-tabs {
+            display: flex;
+            gap: 6px;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .pt-tab {
+            padding: 10px 18px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #444;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.15s;
+        }
+        .pt-tab:hover { color: #ff6b00; }
+        .pt-tab.active {
+            color: #ff6b00;
+            border-bottom-color: #ff6b00;
+        }
+        .pt-subpanel { display: none; }
+        .pt-subpanel.active { display: block; }
+
+        /* 卡片工具 */
+        .pt-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 18px 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+            transition: box-shadow 0.15s;
+        }
+        .pt-card:hover {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+            border-color: #ff6b0044;
+        }
+        .pt-card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #111;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .pt-card-title::before {
+            content: '';
+            display: inline-block;
+            width: 4px; height: 16px;
+            background: #ff6b00;
+            border-radius: 2px;
+        }
+        .pt-card-desc {
+            color: #666;
+            font-size: 12.5px;
+            line-height: 1.7;
+            margin-bottom: 12px;
+        }
+
+        /* 表单 */
+        .pt-form { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px 14px; }
+        @media (max-width: 700px) { .pt-form { grid-template-columns: 1fr; } }
+        .pt-field { display: flex; flex-direction: column; gap: 4px; }
+        .pt-field.full { grid-column: 1 / -1; }
+        .pt-field label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #333;
+        }
+        .pt-field label .req { color: #dc2626; }
+        .pt-field label .hint { color: #888; font-weight: 400; }
+        .pt-field input,
+        .pt-field select,
+        .pt-field textarea {
+            font-size: 13px;
+            color: #111;
+            padding: 7px 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 5px;
+            background: #fff;
+            outline: none;
+            transition: all 0.15s;
+            font-family: inherit;
+        }
+        .pt-field input:focus,
+        .pt-field select:focus,
+        .pt-field textarea:focus {
+            border-color: #ff6b00;
+            box-shadow: 0 0 0 3px rgba(255,107,0,0.12);
+        }
+        .pt-actions {
+            grid-column: 1 / -1;
+            display: flex;
+            gap: 10px;
+            margin-top: 4px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .pt-btn {
+            padding: 8px 18px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #fff;
+            background: #ff6b00;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+        .pt-btn:hover:not(:disabled) { background: #e05d00; }
+        .pt-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+        .pt-btn.secondary { background: #6b7280; }
+        .pt-btn.secondary:hover:not(:disabled) { background: #4b5563; }
+        .pt-btn.danger { background: #dc2626; }
+        .pt-btn.small { padding: 4px 10px; font-size: 12px; }
+
+        /* 结果展示 */
+        .pt-result {
+            margin-top: 16px;
+            padding: 14px 16px;
+            background: #fafafa;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            max-height: 520px;
+            overflow: auto;
+            font-family: ui-monospace, Menlo, Consolas, "Courier New", monospace;
+            font-size: 12.5px;
+            color: #111;
+            line-height: 1.7;
+            word-break: break-word;
+            white-space: pre-wrap;
+        }
+        .pt-result:empty { display: none; }
+
+        .pt-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .pt-badge.critical { background: #fee2e2; color: #991b1b; }
+        .pt-badge.high { background: #fed7aa; color: #9a3412; }
+        .pt-badge.medium { background: #fef3c7; color: #92400e; }
+        .pt-badge.low { background: #dbeafe; color: #1e40af; }
+        .pt-badge.info { background: #e0e7ff; color: #3730a3; }
+
+        /* 结果表格 */
+        .pt-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            margin: 8px 0;
+        }
+        .pt-table th, .pt-table td {
+            padding: 7px 10px;
+            border: 1px solid #e5e7eb;
+            text-align: left;
+            vertical-align: top;
+        }
+        .pt-table th {
+            background: #f3f4f6;
+            color: #111;
+            font-weight: 700;
+        }
+        .pt-table tr:nth-child(even) td { background: #fafafa; }
+
+        .pt-list { padding-left: 18px; line-height: 1.9; }
+        .pt-list li { margin: 2px 0; }
+        .pt-kv { display: grid; grid-template-columns: 160px 1fr; gap: 6px 12px; font-size: 12.5px; line-height: 1.8; }
+        .pt-kv > div:nth-child(odd) { color: #555; font-weight: 600; }
+        .pt-kv > div:nth-child(even) { color: #111; word-break: break-word; }
+
+        .pt-exploit-block {
+            border-left: 3px solid #ff6b00;
+            background: #fff7ed;
+            padding: 10px 14px;
+            margin: 8px 0;
+            border-radius: 4px;
+        }
+        .pt-exploit-block h4 {
+            color: #9a3412;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        .pt-code {
+            background: #0b1020;
+            color: #e5e7eb;
+            padding: 10px 14px;
+            border-radius: 4px;
+            font-family: ui-monospace, Menlo, Consolas, monospace;
+            font-size: 12px;
+            line-height: 1.65;
+            overflow-x: auto;
+            margin: 6px 0;
+            white-space: pre;
+        }
     </style>
 </head>
 <body>
     <!-- 顶部标题栏 -->
     <div class="header">
         <div class="title">DeepSeekChat</div>
-        <div id="statusBadge" class="status-badge status-loading">正在加载模型...</div>
+        <div style="display:flex; align-items:center; gap:16px;">
+            <div class="view-tabs">
+                <button class="view-tab active" data-view="chat">AI 对话</button>
+                <button class="view-tab pentest-tab" data-view="pentest">🛡️ 渗透工具</button>
+            </div>
+            <div id="statusBadge" class="status-badge status-loading">正在加载模型...</div>
+        </div>
     </div>
 
-    <!-- 聊天区域 -->
-    <div class="chat-container" id="chatContainer">
+    <!-- ========= 视图容器 ========= -->
+    <div style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+        <!-- 聊天视图 -->
+        <div class="view-panel active" id="view-chat">
+            <div class="chat-container" id="chatContainer" style="flex:1;">
         <div class="welcome" id="welcome">
             <h2>DeepSeek 本地对话框架</h2>
             <p>模型加载完成后即可开始对话,按 Enter 发送消息</p>
         </div>
     </div>
 
-    <!-- 底部输入区 -->
-    <div class="input-area">
-        <div class="input-wrapper">
-            <textarea
-                class="input-box"
-                id="inputBox"
-                placeholder="输入消息... (Enter 发送, Shift+Enter 换行)"
-                rows="1"
-            ></textarea>
-            <button class="clear-btn" id="clearBtn" title="清空对话">清空</button>
-            <button class="send-btn" id="sendBtn" disabled>发送</button>
+        </div><!-- /chat-container -->
+
+        <!-- 底部输入区 (聊天视图) -->
+        <div class="input-area">
+            <div class="input-wrapper">
+                <textarea
+                    class="input-box"
+                    id="inputBox"
+                    placeholder="输入消息... (Enter 发送, Shift+Enter 换行)"
+                    rows="1"
+                ></textarea>
+                <button class="clear-btn" id="clearBtn" title="清空对话">清空</button>
+                <button class="send-btn" id="sendBtn" disabled>发送</button>
+            </div>
         </div>
-    </div>
+        </div><!-- /view-chat -->
+
+        <!-- 渗透工具视图 -->
+        <div class="view-panel" id="view-pentest">
+            <div class="pentest-panel">
+                <div class="pentest-wrap">
+                    <h1 class="pentest-title">🛡️ 白帽渗透测试工具箱</h1>
+                    <div class="pentest-subtitle">
+                        <b>⚠️ 法律声明：</b>本工具集<b>仅限合法授权</b>的白帽安全测试、CTF靶场学习与漏洞原理教学演示。
+                        请在获得目标系统<b>书面授权</b>后使用，遵守中华人民共和国《网络安全法》等相关法律法规，
+                        未经授权测试他人系统将承担相应法律责任。
+                    </div>
+
+                    <!-- 子分类Tab -->
+                    <div class="pt-tabs">
+                        <button class="pt-tab active" data-pt="recon">🔍 侦察 Recon</button>
+                        <button class="pt-tab" data-pt="scan">💉 漏洞扫描</button>
+                        <button class="pt-tab" data-pt="exploit">⚔️ 漏洞利用库</button>
+                        <button class="pt-tab" data-pt="bypass">🔥 WAF绕过</button>
+                        <button class="pt-tab" data-pt="tools">📦 工具总览</button>
+                    </div>
+
+                    <!-- ======= 1. 侦察 Recon ======= -->
+                    <div class="pt-subpanel active" id="pt-recon">
+                        <!-- Whois -->
+                        <div class="pt-card">
+                            <div class="pt-card-title">Whois / 信息收集</div>
+                            <div class="pt-card-desc">域名 DNS 解析、反向解析、ping TCP 延迟</div>
+                            <div class="pt-form" id="form-recon-whois">
+                                <div class="pt-field full">
+                                    <label>目标域名/IP <span class="req">*</span></label>
+                                    <input type="text" name="target" placeholder="example.com 或 1.2.3.4" value="">
+                                </div>
+                                <div class="pt-actions">
+                                    <button type="button" class="pt-btn" data-run="recon/whois">查询</button>
+                                    <span class="pt-tip" style="font-size:12px;color:#666;"></span>
+                                </div>
+                                <div class="pt-result full" data-result="recon-whois"></div>
+                            </div>
+                        </div>
+                        <!-- 子域名 -->
+                        <div class="pt-card">
+                            <div class="pt-card-title">子域名爆破 + HTTPS 证书透明度日志 (crt.sh)</div>
+                            <div class="pt-card-desc">先拉取证书透明度日志发现隐藏子域，再字典批量 DNS 解析 + HTTP 探活</div>
+                            <div class="pt-form" id="form-recon-sub">
+                                <div class="pt-field full">
+                                    <label>根域名 <span class="req">*</span> <span class="hint">(不含www)</span></label>
+                                    <input type="text" name="target" placeholder="baidu.com" value="">
+                                </div>
+                                <div class="pt-field">
+                                    <label>自定义子域字典 <span class="hint">逗号分隔,留空用默认2000+子域</span></label>
+                                    <input type="text" name="sub_list" placeholder="api,admin,dev,test,... 留空=默认">
+                                </div>
+                                <div class="pt-field">
+                                    <label>并发线程数</label>
+                                    <input type="number" name="workers" value="50" min="1" max="200">
+                                </div>
+                                <div class="pt-actions">
+                                    <button type="button" class="pt-btn" data-run="recon/subdomain">开始子域爆破</button>
+                                    <span class="pt-tip" style="font-size:12px;color:#666;">(可能需要 30s-2min)</span>
+                                </div>
+                                <div class="pt-result full" data-result="recon-subdomain"></div>
+                            </div>
+                        </div>
+                        <!-- 端口扫描 -->
+                        <div class="pt-card">
+                            <div class="pt-card-title">TCP 端口扫描 + Banner/服务指纹</div>
+                            <div class="pt-card-desc">Top N 常用端口探测 + Banner 抓取 / 可选指定端口范围</div>
+                            <div class="pt-form" id="form-recon-port">
+                                <div class="pt-field full">
+                                    <label>目标 IP / 主机 <span class="req">*</span></label>
+                                    <input type="text" name="target" placeholder="127.0.0.1 或 example.com">
+                                </div>
+                                <div class="pt-field">
+                                    <label>指定端口/范围 <span class="hint">留空用Top N</span></label>
+                                    <input type="text" name="ports" placeholder="如: 80,443,3306 或 1-1000">
+                                </div>
+                                <div class="pt-field">
+                                    <label>Top N 常用端口</label>
+                                    <input type="number" name="top_n" value="80" min="10" max="1000">
+                                </div>
+                                <div class="pt-field">
+                                    <label>并发线程</label>
+                                    <input type="number" name="workers" value="80" min="10" max="400">
+                                </div>
+                                <div class="pt-field">
+                                    <label>超时(秒)</label>
+                                    <input type="number" name="timeout" step="0.1" value="1.5" min="0.3">
+                                </div>
+                                <div class="pt-field">
+                                    <label>抓取Banner</label>
+                                    <select name="banner"><option value="1">是</option><option value="0">否</option></select>
+                                </div>
+                                <div class="pt-actions">
+                                    <button type="button" class="pt-btn" data-run="recon/port">开始端口扫描</button>
+                                </div>
+                                <div class="pt-result full" data-result="recon-port"></div>
+                            </div>
+                        </div>
+                        <!-- 目录扫描 -->
+                        <div class="pt-card">
+                            <div class="pt-card-title">目录 / 敏感文件 / 路径爆破</div>
+                            <div class="pt-card-desc">自动拿404基准指纹过滤假阳性；可扩展php/html/asp/zip/backup等后缀</div>
+                            <div class="pt-form" id="form-recon-dir">
+                                <div class="pt-field full">
+                                    <label>目标URL <span class="req">*</span></label>
+                                    <input type="text" name="target" placeholder="http://target:8080/path">
+                                </div>
+                                <div class="pt-field">
+                                    <label>自定义路径字典 <span class="hint">逗号分隔,留空默认</span></label>
+                                    <input type="text" name="paths" placeholder="admin,login,phpmyadmin,robots.txt,.env">
+                                </div>
+                                <div class="pt-field">
+                                    <label>扩展后缀 <span class="hint">逗号分隔,留空不扩展</span></label>
+                                    <input type="text" name="ext" placeholder="例: .php,.html,.bak,.zip">
+                                </div>
+                                <div class="pt-field">
+                                    <label>并发线程</label>
+                                    <input type="number" name="workers" value="30" min="1" max="100">
+                                </div>
+                                <div class="pt-field">
+                                    <label>超时(秒)</label>
+                                    <input type="number" name="timeout" step="0.1" value="5" min="2">
+                                </div>
+                                <div class="pt-actions">
+                                    <button type="button" class="pt-btn" data-run="recon/dir">开始目录扫描</button>
+                                </div>
+                                <div class="pt-result full" data-result="recon-dir"></div>
+                            </div>
+                        </div>
+                        <!-- 指纹 -->
+                        <div class="pt-card">
+                            <div class="pt-card-title">CMS / 中间件 / WAF 指纹识别</div>
+                            <div class="pt-card-desc">60+ CMS指纹 + 20+ WAF指纹 + 10种中间件 + 敏感路径探测二次确认</div>
+                            <div class="pt-form" id="form-recon-fp">
+                                <div class="pt-field full">
+                                    <label>目标URL <span class="req">*</span></label>
+                                    <input type="text" name="target" placeholder="http://target">
+                                </div>
+                                <div class="pt-actions">
+                                    <button type="button" class="pt-btn" data-run="recon/fingerprint">识别指纹</button>
+                                </div>
+                                <div class="pt-result full" data-result="recon-fp"></div>
+                            </div>
+                        </div>
+                        <!-- 弱口令爆破 -->
+                        <div class="pt-card">
+                            <div class="pt-card-title">HTTP 弱口令爆破 (表单 / Basic Auth)</div>
+                            <div class="pt-form" id="form-recon-brute">
+                                <div class="pt-field">
+                                    <label>模式</label>
+                                    <select name="mode"><option value="form">表单 POST</option><option value="basic">HTTP Basic Auth</option></select>
+                                </div>
+                                <div class="pt-field">
+                                    <label>登录URL <span class="req">*</span></label>
+                                    <input type="text" name="url" placeholder="http://target/login.php">
+                                </div>
+                                <div class="pt-field">
+                                    <label>账号字典 <span class="hint">逗号分隔,留空默认</span></label>
+                                    <input type="text" name="users" placeholder="admin,root,test">
+                                </div>
+                                <div class="pt-field">
+                                    <label>密码字典 <span class="hint">逗号分隔,留空默认</span></label>
+                                    <input type="text" name="passwords" placeholder="admin,123456,password">
+                                </div>
+                                <div class="pt-field">
+                                    <label>用户名字段名 <span class="hint">表单模式</span></label>
+                                    <input type="text" name="lp_userfield" value="username">
+                                </div>
+                                <div class="pt-field">
+                                    <label>密码字段名</label>
+                                    <input type="text" name="lp_passfield" value="password">
+                                </div>
+                                <div class="pt-field">
+                                    <label>失败关键字 <span class="hint">表单模式: 登录失败等</span></label>
+                                    <input type="text" name="lp_failkw" placeholder="登录失败 / 用户名或密码错误">
+                                </div>
+                                <div class="pt-field">
+                                    <label>并发线程</label>
+                                    <input type="number" name="workers" value="10" min="1" max="50">
+                                </div>
+                                <div class="pt-actions">
+                                    <button type="button" class="pt-btn danger" data-run="recon/brute">开始爆破</button>
+                                    <span style="font-size:12px;color:#dc2626;font-weight:600;">仅对授权目标使用</span>
+                                </div>
+                                <div class="pt-result full" data-result="recon-brute"></div>
+                            </div>
+                        </div>
+                        <!-- 一键大礼包 -->
+                        <div class="pt-card">
+                            <div class="pt-card-title">🚀 一键全量侦察 (子域 + 端口 + 目录 + 指纹)</div>
+                            <div class="pt-form" id="form-recon-full">
+                                <div class="pt-field full">
+                                    <label>目标 <span class="req">*</span></label>
+                                    <input type="text" name="target" placeholder="baidu.com 或 http://target:8080">
+                                </div>
+                                <div class="pt-field">
+                                    <label>子域名爆破</label>
+                                    <select name="sub"><option value="1">开</option><option value="0">关</option></select>
+                                </div>
+                                <div class="pt-field">
+                                    <label>端口扫描 (Top 50)</label>
+                                    <select name="port"><option value="1">开</option><option value="0">关</option></select>
+                                </div>
+                                <div class="pt-field">
+                                    <label>目录爆破</label>
+                                    <select name="dir"><option value="1">开</option><option value="0">关</option></select>
+                                </div>
+                                <div class="pt-actions">
+                                    <button type="button" class="pt-btn" data-run="recon/full">一键全量侦察</button>
+                                    <span style="font-size:12px;color:#666;">(预计 2-5 分钟)</span>
+                                </div>
+                                <div class="pt-result full" data-result="recon-full"></div>
+                            </div>
+                        </div>
+                    </div><!-- /pt-recon -->
+
+                    <!-- ======= 2. 漏洞扫描 ======= -->
+                    <div class="pt-subpanel" id="pt-scan">
+                        <div class="pt-card">
+                            <div class="pt-card-title">🎯 漏洞扫描引擎 (SQLi / XSS / RCE / SSTI / SSRF / LFI / XXE / 文件上传 / Shiro / Spring / ...)</div>
+                            <div class="pt-form" id="form-scan">
+                                <div class="pt-field full">
+                                    <label>目标URL <span class="req">*</span> <span class="hint">带参数如: http://x/page?id=1</span></label>
+                                    <input type="text" name="target" value="">
+                                </div>
+                                <div class="pt-field">
+                                    <label>扫描类型</label>
+                                    <select name="type">
+                                        <option value="all">🔥 一键全部扫描 (推荐)</option>
+                                        <option value="sqli">SQL注入检测</option>
+                                        <option value="xss">反射XSS检测</option>
+                                        <option value="rce">命令注入/RCE检测</option>
+                                        <option value="ssti">SSTI模板注入检测</option>
+                                        <option value="ssrf">SSRF (需指定参数名)</option>
+                                        <option value="lfi">目录遍历/LFI (需指定参数名)</option>
+                                        <option value="xxe">XXE XML外部实体</option>
+                                        <option value="unauth">未授权敏感端点 (Spring/Nacos/Swagger)</option>
+                                        <option value="middleware">中间件解析漏洞</option>
+                                        <option value="deserialize">Shiro/Fastjson/Thinkphp 指纹CVE</option>
+                                        <option value="info">信息泄漏 (IP/JWT/密钥/注释/邮箱)</option>
+                                        <option value="upload">文件上传漏洞</option>
+                                    </select>
+                                </div>
+                                <div class="pt-field">
+                                    <label>SSRF/LFI 参数名 <span class="hint">对应扫描类型时填写</span></label>
+                                    <input type="text" name="param" placeholder="如 url / file / page / image">
+                                </div>
+                                <div class="pt-field">
+                                    <label>上传URL <span class="hint">类型=文件上传时填写</span></label>
+                                    <input type="text" name="upload_url" placeholder="http://target/upload.php">
+                                </div>
+                                <div class="pt-field">
+                                    <label>上传文件字段名</label>
+                                    <input type="text" name="file_field" value="file">
+                                </div>
+                                <div class="pt-field">
+                                    <label>上传后访问前缀URL</label>
+                                    <input type="text" name="access_prefix" placeholder="http://target/upload/">
+                                </div>
+                                <div class="pt-field">
+                                    <label>并发线程数 (仅一键扫描)</label>
+                                    <input type="number" name="threads" value="10">
+                                </div>
+                                <div class="pt-actions">
+                                    <button type="button" class="pt-btn" data-run="scan">执行漏洞扫描</button>
+                                    <span style="font-size:12px;color:#dc2626;font-weight:600;">授权目标仅限</span>
+                                </div>
+                                <div class="pt-result full" data-result="scan"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ======= 3. 漏洞利用库 ======= -->
+                    <div class="pt-subpanel" id="pt-exploit">
+                        <div class="pt-card">
+                            <div class="pt-card-title">📚 漏洞利用代码库 + 利用链细节 + Payload字典</div>
+                            <div class="pt-card-desc">
+                                收录：SQLi完整8步利用链 / XSS 8阶段利用链 / SSRF 云元数据-Gopher-Dict内网漫游 / 
+                                RCE反弹shell全手册 / SSTI 7种模板引擎RCE / 19种文件上传绕过 /
+                                Shiro550 / Fastjson / Thinkphp / Spring4Shell / Spring-Cloud-Function / Log4Shell / Nacos等一键CVE
+                            </div>
+                            <div class="pt-form" id="form-exploit">
+                                <div class="pt-field full">
+                                    <label>过滤分类/关键字 <span class="hint">例: SQLi / XSS / SSRF / RCE / SSTI / Upload / CVE-2021-44228</span></label>
+                                    <input type="text" id="exploit_filter" placeholder="留空显示全部">
+                                </div>
+                                <div class="pt-actions">
+                                    <button type="button" class="pt-btn" data-run="exploits_load">加载漏洞利用代码库</button>
+                                </div>
+                                <div class="pt-result full" data-result="exploits" style="font-family:inherit;white-space:normal;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ======= 4. WAF绕过 ======= -->
+                    <div class="pt-subpanel" id="pt-bypass">
+                        <div class="pt-card">
+                            <div class="pt-card-title">🔥 WAF绕过技术库 + 自动Payload变体生成</div>
+                            <div class="pt-card-desc">HTTP层: 多重编码/HPP/分块传输/请求走私/缓存投毒/XFF伪装; 
+                                漏洞层: SQLi/XSS/RCE/SSTI/SSRF/Upload/LFI 全分类绕过技术集合</div>
+                            <div class="pt-form" id="form-bypass">
+                                <div class="pt-field">
+                                    <label>分类 <span class="hint">留空显示全部</span></label>
+                                    <input type="text" id="bypass_category" placeholder="通用HTTP / SQLi / XSS / RCE / SSTI / SSRF / Upload / LFI">
+                                </div>
+                                <div class="pt-field">
+                                    <label>自动变体深度</label>
+                                    <input type="number" id="bypass_depth" value="2" min="1" max="3">
+                                </div>
+                                <div class="pt-field full">
+                                    <label>输入一个Payload(可选) → 自动生成WAF绕过变体 <span class="hint">例: 1' union select 1,2,3--</span></label>
+                                    <input type="text" id="bypass_payload" placeholder="">
+                                </div>
+                                <div class="pt-actions">
+                                    <button type="button" class="pt-btn" data-run="bypass_load">加载/生成 WAF 绕过库</button>
+                                </div>
+                                <div class="pt-result full" data-result="bypass" style="font-family:inherit;white-space:normal;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ======= 5. 工具总览 ======= -->
+                    <div class="pt-subpanel" id="pt-tools">
+                        <div class="pt-card">
+                            <div class="pt-card-title">📦 渗透工具全集速查表 + API 列表</div>
+                            <div class="pt-result active" data-result="tools" style="font-family:inherit;white-space:normal;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /view-pentest -->
+    </div><!-- /view容器 -->
 
     <!-- 底部状态栏 -->
     <div class="footer">
@@ -493,6 +1115,433 @@
         });
 
         sendBtn.addEventListener('click', sendMessage);
+
+        // ================================================================
+        // 渗透工具前端逻辑
+        // ================================================================
+        // 视图切换 Tab
+        document.querySelectorAll('.view-tab').forEach(t => {
+            t.addEventListener('click', () => {
+                document.querySelectorAll('.view-tab').forEach(x => x.classList.remove('active'));
+                t.classList.add('active');
+                const v = t.dataset.view;
+                document.querySelectorAll('.view-panel').forEach(p => p.classList.remove('active'));
+                const panel = document.getElementById('view-' + v);
+                if (panel) panel.classList.add('active');
+                if (v === 'pentest') loadToolsList();
+            });
+        });
+
+        // 子分类Tab
+        document.querySelectorAll('.pt-tab').forEach(t => {
+            t.addEventListener('click', () => {
+                document.querySelectorAll('.pt-tab').forEach(x => x.classList.remove('active'));
+                t.classList.add('active');
+                const p = t.dataset.pt;
+                document.querySelectorAll('.pt-subpanel').forEach(x => x.classList.remove('active'));
+                const sub = document.getElementById('pt-' + p);
+                if (sub) sub.classList.add('active');
+                if (p === 'tools') loadToolsList();
+            });
+        });
+
+        // ============ 通用 AJAX + 结果渲染 ============
+        function ptFetch(url, body, method = 'POST') {
+            return fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: body ? JSON.stringify(body) : undefined,
+            }).then(r => {
+                if (!r.ok) return r.json().then(d => Promise.reject(d));
+                return r.json();
+            });
+        }
+
+        function ptCollectForm(formId) {
+            const form = document.getElementById(formId);
+            if (!form) return {};
+            const data = {};
+            form.querySelectorAll('input[name], select[name], textarea[name]').forEach(el => {
+                let v = (el.type === 'checkbox') ? el.checked : el.value;
+                if (el.type === 'number' && v !== '') v = Number(v);
+                data[el.name] = v;
+            });
+            // 特殊: 爆破表单的 login_params
+            if (formId === 'form-recon-brute') {
+                data.login_params = {
+                    user_field: data.lp_userfield || 'username',
+                    pass_field: data.lp_passfield || 'password',
+                    fail_keyword: data.lp_failkw || '',
+                };
+                delete data.lp_userfield; delete data.lp_passfield; delete data.lp_failkw;
+            }
+            return data;
+        }
+
+        function setRunning(formId, running, btnText = '执行中...') {
+            const form = document.getElementById(formId);
+            if (!form) return;
+            form.querySelectorAll('button[data-run]').forEach(btn => {
+                btn.disabled = running;
+                btn._oldText = btn._oldText || btn.textContent;
+                btn.textContent = running ? btnText : btn._oldText;
+            });
+        }
+
+        function renderResult(el, html, mode) {
+            if (!el) return;
+            if (mode === 'json_raw') {
+                el.textContent = html;
+                el.style.whiteSpace = 'pre';
+            } else {
+                el.innerHTML = html;
+                el.style.whiteSpace = 'normal';
+            }
+        }
+
+        function esc(s) {
+            return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+        }
+
+        function severityBadge(s) {
+            const map = { critical: 'critical', high: 'high', medium: 'medium', low: 'low', info: 'info' };
+            s = String(s || 'info').toLowerCase();
+            const k = map[s] || 'info';
+            return `<span class="pt-badge ${k}">${(s||'').toUpperCase()}</span>`;
+        }
+
+        // ============ Recon 表单按钮绑定 ============
+        const RECON_FORM_ENDPOINT = {
+            'form-recon-whois':    { api: '/api/pentest/recon/whois',    key: 'recon-whois' },
+            'form-recon-sub':      { api: '/api/pentest/recon/subdomain', key: 'recon-subdomain' },
+            'form-recon-port':     { api: '/api/pentest/recon/port',    key: 'recon-port' },
+            'form-recon-dir':      { api: '/api/pentest/recon/dir',     key: 'recon-dir' },
+            'form-recon-fp':       { api: '/api/pentest/recon/fingerprint', key: 'recon-fp' },
+            'form-recon-brute':    { api: '/api/pentest/recon/brute',   key: 'recon-brute' },
+            'form-recon-full':     { api: '/api/pentest/recon/full',    key: 'recon-full' },
+        };
+
+        function runRecon(formId) {
+            const cfg = RECON_FORM_ENDPOINT[formId];
+            if (!cfg) return;
+            const payload = ptCollectForm(formId);
+            if (!payload.target && formId !== 'form-recon-brute') {
+                alert('请填写目标'); return;
+            }
+            if (formId === 'form-recon-brute' && !payload.url) {
+                alert('请填写登录URL'); return;
+            }
+            setRunning(formId, true, '执行中...');
+            const resEl = document.querySelector(`[data-result="${cfg.key}"]`);
+            renderResult(resEl, '<div style="color:#ff6b00;font-weight:700;">⌛ 正在执行，请耐心等待 (长任务不要刷新页面)...</div>');
+            ptFetch(cfg.api, payload)
+                .then(data => {
+                    if (!data.ok) throw new Error(data.msg || '执行失败');
+                    renderResult(resEl, renderRecon(cfg.key, data.data));
+                })
+                .catch(err => {
+                    renderResult(resEl,
+                        `<div style="color:#991b1b;font-weight:700;">❌ 错误: ${esc(err.msg || err.message || err)}</div>
+                         <div style="margin-top:8px;font-size:12px;color:#555;">详细: <pre style="margin:6px 0;padding:8px;background:#fef2f2;border:1px solid #fecaca;border-radius:4px;">${esc(JSON.stringify(err, null, 2))}</pre></div>`);
+                })
+                .finally(() => setRunning(formId, false));
+        }
+
+        function renderRecon(key, data) {
+            if (key === 'recon-whois') {
+                return `<div class="pt-kv">
+                    <div>域名/IP</div><div>${esc(data.domain || data.host || '')}</div>
+                    <div>DNS解析</div><div>${(data.dns || []).join(', ') || '无'}</div>
+                    <div>反向解析</div><div>${esc(JSON.stringify(data.reverse || {}))}</div>
+                    <div>TCP Ping</div><div>${data.ping_ms ? data.ping_ms.toFixed(1) + ' ms' : '超时'}</div>
+                    ${data.rdap ? `<div>RDAP状态</div><div>${esc(JSON.stringify(data.rdap))}</div>` : ''}
+                </div>`;
+            }
+            if (key === 'recon-subdomain') {
+                if (!data || !data.length) return '<div style="color:#666;">未发现子域名</div>';
+                const rows = data.map(r => `<tr>
+                    <td>${esc(r.subdomain)}</td>
+                    <td>${esc(r.ip || '-')}</td>
+                    <td><span class="pt-badge ${r.status>=200&&r.status<400?'info':'low'}">${r.status || 0}</span></td>
+                    <td>${esc((r.title||'').slice(0,60))}</td>
+                    <td>${r.resp_len}</td>
+                </tr>`).join('');
+                return `<div>发现 <b style="color:#ff6b00">${data.length}</b> 个子域名：
+                <table class="pt-table"><thead><tr><th>子域名</th><th>IP</th><th>状态</th><th>标题</th><th>长度</th></tr></thead>
+                <tbody>${rows}</tbody></table></div>`;
+            }
+            if (key === 'recon-port') {
+                if (!data || !data.length) return '<div style="color:#666;">无开放端口</div>';
+                const rows = data.map(r => `<tr>
+                    <td><b>${r.port}</b></td>
+                    <td>${esc(r.service || '-')}</td>
+                    <td style="max-width:600px;word-break:break-all;">${esc((r.banner||'').slice(0,500)) || '-'}</td>
+                </tr>`).join('');
+                return `<div>开放端口 <b style="color:#ff6b00">${data.length}</b> 个：
+                <table class="pt-table"><thead><tr><th>端口</th><th>服务</th><th>Banner/指纹</th></tr></thead>
+                <tbody>${rows}</tbody></table></div>`;
+            }
+            if (key === 'recon-dir') {
+                if (!data || !data.length) return '<div style="color:#666;">未发现路径</div>';
+                const rows = data.map(r => `<tr>
+                    <td><span class="pt-badge ${r.status>=200&&r.status<300?'info':(r.status>=300&&r.status<400?'low':'medium')}">${r.status}</span></td>
+                    <td>${esc(r.path)}</td>
+                    <td>${r.length}</td>
+                    <td>${esc((r.title||'').slice(0,80))}</td>
+                    <td>${esc((r.redirect||'').slice(0,80))}</td>
+                </tr>`).join('');
+                return `<div>命中路径 <b style="color:#ff6b00">${data.length}</b> 个：
+                <table class="pt-table"><thead><tr><th>状态</th><th>路径</th><th>长度</th><th>标题</th><th>跳转</th></tr></thead>
+                <tbody>${rows}</tbody></table></div>`;
+            }
+            if (key === 'recon-fp') {
+                return `<div class="pt-kv">
+                    <div>URL</div><div>${esc(data.url || '')}</div>
+                    <div>HTTP状态</div><div>${data.status || 0}</div>
+                    <div>标题</div><div>${esc(data.title || '-')}</div>
+                    <div>Server</div><div>${esc(data.server_header || '-')}</div>
+                    <div>X-Powered-By</div><div>${esc(data.x_powered || '-')}</div>
+                    <div>Cookies</div><div>${(data.cookies || []).join(', ') || '-'}</div>
+                    <div>CMS</div><div>${(data.cms||[]).length ? (data.cms.map(c=>`<span class="pt-badge info">${esc(c)}</span>`).join(' ')) : '-'}</div>
+                    <div>中间件</div><div>${(data.middleware||[]).length ? (data.middleware.map(c=>`<span class="pt-badge medium">${esc(c)}</span>`).join(' ')) : '-'}</div>
+                    <div>WAF</div><div>${(data.waf||[]).length ? (data.waf.map(c=>`<span class="pt-badge critical">${esc(c)}</span>`).join(' ')) : '<span style="color:#888;">未检测到常见WAF</span>'}</div>
+                    <div>额外路径</div><div>${(data.extra_probes||[]).length ? (data.extra_probes.map(p=>`<div>✅ ${esc(JSON.stringify(p))}</div>`).join('')) : '-'}</div>
+                </div>`;
+            }
+            if (key === 'recon-brute') {
+                const d = data.results || [];
+                if (!d.length) return `<div style="color:#666;">未爆破出有效凭据 (模式: ${esc(data.mode || '-')})。<br>
+                    <small style="color:#999;">提示: 如果使用表单模式，请确认fail_keyword是否匹配失败回显；若回显大小差异大也可以判定成功。</small></div>`;
+                return `<div>爆破命中 <b style="color:#ff6b00">${d.length}</b> 条：
+                <table class="pt-table"><thead><tr><th>账号</th><th>密码</th><th>状态</th><th>长度</th></tr></thead><tbody>
+                ${d.map(r=>`<tr><td><b>${esc(r.username||r.user||'')}</b></td><td style="color:#991b1b">${esc(r.password||r.pass||'')}</td><td>${r.status||''}</td><td>${r.length||''}</td></tr>`).join('')}
+                </tbody></table></div>`;
+            }
+            if (key === 'recon-full') {
+                return `<div>
+                    <h3 style="margin:6px 0 10px;color:#111;">Whois / Ping</h3>
+                    ${renderRecon('recon-whois', data.whois || data)}
+                    <h3 style="margin:16px 0 10px;color:#111;">子域名 (${(data.subdomains||[]).length})</h3>
+                    ${renderRecon('recon-subdomain', data.subdomains || [])}
+                    <h3 style="margin:16px 0 10px;color:#111;">开放端口 (${(data.ports||[]).length})</h3>
+                    ${renderRecon('recon-port', data.ports || [])}
+                    <h3 style="margin:16px 0 10px;color:#111;">指纹</h3>
+                    ${renderRecon('recon-fp', data.fingerprint || {})}
+                    <h3 style="margin:16px 0 10px;color:#111;">目录/敏感文件 (${(data.dirscan||[]).length})</h3>
+                    ${renderRecon('recon-dir', data.dirscan || [])}
+                </div>`;
+            }
+            return `<pre style="margin:0;padding:10px;background:#f5f5f5;border:1px solid #eee;border-radius:4px;">${esc(JSON.stringify(data, null, 2))}</pre>`;
+        }
+
+        // ============ Recon 按钮事件 ============
+        Object.keys(RECON_FORM_ENDPOINT).forEach(fid => {
+            const form = document.getElementById(fid);
+            if (!form) return;
+            form.querySelectorAll('button[data-run]').forEach(b => {
+                b.addEventListener('click', () => runRecon(fid));
+            });
+        });
+
+        // ============ 漏洞扫描 ============
+        document.querySelector('#form-scan button[data-run="scan"]').addEventListener('click', () => {
+            const form = document.getElementById('form-scan');
+            const payload = ptCollectForm('form-scan');
+            // 扫描API: 参数名 param 对 ssrf/lfi两种
+            const extra = {};
+            if (payload.type === 'ssrf') extra.ssrf_param = payload.param;
+            if (payload.type === 'lfi')  extra.lfi_param  = payload.param;
+            extra.param        = payload.param;
+            extra.upload_url   = payload.upload_url;
+            extra.file_field   = payload.file_field;
+            extra.access_prefix = payload.access_prefix;
+            extra.threads      = payload.threads;
+
+            if (!payload.target) { alert('请填写目标URL'); return; }
+            setRunning('form-scan', true, '扫描中,请稍候...');
+            const resEl = document.querySelector('[data-result="scan"]');
+            renderResult(resEl, '<div style="color:#ff6b00;font-weight:700;">⌛ 漏洞扫描执行中...</div>');
+            ptFetch('/api/pentest/scan', Object.assign({
+                target: payload.target,
+                type:   payload.type,
+            }, extra))
+                .then(data => {
+                    if (!data.ok) throw new Error(data.msg);
+                    renderResult(resEl, renderScan(data.data));
+                })
+                .catch(err => renderResult(resEl, `<div style="color:#991b1b;">❌ 错误: ${esc(err.msg || err.message || err)}</div>`))
+                .finally(() => setRunning('form-scan', false));
+        });
+
+        function renderScan(data) {
+            let list = [];
+            if (data && data.all_scan) list = data.results || [];
+            else if (data && data.results) list = data.results;
+            else if (Array.isArray(data)) list = data;
+            if (!list.length) return `<div style="color:#222;">扫描完成。未检测到漏洞 (也可能目标系统防护完善，或需进一步手工验证)。
+                <br><small style="color:#888;">提示: 选择更具体的扫描类型(如指定SSRF/LFI参数名)可提高检出率。</small></div>`;
+            const vuln = list.filter(x => x && x.is_vuln);
+            const inf  = list.filter(x => x && !x.is_vuln);
+            const rows = vuln.concat(inf).map(v => {
+                return `<tr>
+                    <td>${severityBadge(v.severity)}</td>
+                    <td><b>${esc(v.name || v.scanner || v.category || '')}</b></td>
+                    <td>${esc(v.category || v.cwe || '-')}</td>
+                    <td style="max-width:300px;word-break:break-all;">${esc((v.url||v.payload||'').slice(0,160))}</td>
+                    <td style="max-width:500px;word-break:break-all;">${esc((v.evidence || v.error || '').slice(0,300))}</td>
+                </tr>`;
+            }).join('');
+            return `<div>
+                <div style="margin-bottom:10px;">漏洞命中: <b style="color:#dc2626">${vuln.length}</b> 个,
+                    其它信息/失败: <b>${inf.length}</b> 个</div>
+                <table class="pt-table">
+                    <thead><tr><th>风险</th><th>名称</th><th>分类/CWE</th><th>URL/Payload</th><th>证据</th></tr></thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            </div>`;
+        }
+
+        // ============ 漏洞利用库加载 ============
+        document.querySelector('#form-exploit button[data-run="exploits_load"]').addEventListener('click', () => {
+            const query = (document.getElementById('exploit_filter').value || '').trim();
+            setRunning('form-exploit', true, '加载中...');
+            const resEl = document.querySelector('[data-result="exploits"]');
+            const body = query ? { query } : undefined;
+            (body ? ptFetch('/api/pentest/exploits', body) : ptFetch('/api/pentest/exploits', undefined, 'GET'))
+                .then(data => {
+                    if (!data.ok) throw new Error(data.msg);
+                    renderResult(resEl, renderExploits(data.data.list || []));
+                })
+                .catch(err => renderResult(resEl, `<div style="color:#991b1b;">❌ 错误: ${esc(err.msg || err.message || err)}</div>`))
+                .finally(() => setRunning('form-exploit', false));
+        });
+
+        function renderExploits(list) {
+            if (!list.length) return '<div style="color:#666;">未匹配到项目。请尝试其它关键词 (SQLi / XSS / SSRF / RCE / SSTI / Upload / CVE / Shiro / Log4Shell ...)</div>';
+            return list.map(e => {
+                const cat = e.category || '其它';
+                const cvss = e.cvss ? `<span class="pt-badge ${(e.cvss>=9?'critical':(e.cvss>=7?'high':'medium'))}">CVSS ${e.cvss}</span>` : '';
+                const sev = e.severity ? severityBadge(e.severity) : '';
+                const cve = e.cve ? `<span class="pt-badge info">${esc(e.cve)}</span>` : '';
+                const steps = (e.exploit_steps || []).map(s => `<li>${esc(s)}</li>`).join('');
+                const techs = (e.techniques || []).map(t => `<div class="pt-exploit-block"><h4>${esc(t.title||'')}</h4>
+                    <div><b>原理:</b> ${esc(t.principle || t.desc || '')}</div>
+                    ${t.example ? `<div style="margin-top:4px;"><b>示例:</b><div class="pt-code">${esc(t.example||'')}</div></div>` : ''}
+                    ${t.适用 ? `<div style="margin-top:4px;"><b>适用:</b> ${esc(t.适用 || t.suitable || '')}</div>` : ''}
+                    ${t.注意 ? `<div style="margin-top:4px;"><b>注意:</b> ${esc(t.注意 || t.note || '')}</div>` : ''}
+                    </div>`).join('');
+                const payloads = e.payloads ? Object.entries(e.payloads).map(([k,v]) => `<div><b>${esc(k)}:</b><div class="pt-code">${esc(String(v).slice(0,500))}</div></div>`).join('') : '';
+                const bypass = (e.bypass_tips || []).map(t => `<li>${esc(t)}</li>`).join('');
+                const post = (e.post_exploitation || []).map(t => `<li>${esc(t)}</li>`).join('');
+                const refs = (e.references || []).map(u => `<li><a href="${esc(u)}" target="_blank" rel="noopener">${esc(u)}</a></li>`).join('');
+                const dcode = e.detection_code ? `<div style="margin-top:8px;"><b>检测代码:</b><div class="pt-code">${esc(e.detection_code)}</div></div>` : '';
+                const ecode = e.exploit_code ? `<div style="margin-top:8px;"><b>EXP代码:</b><div class="pt-code">${esc(e.exploit_code)}</div></div>` : '';
+                return `<div class="pt-card" style="margin:14px 0;border-color:#fed7aa;">
+                    <h3 style="color:#9a3412;margin-bottom:6px;">${esc(e.title || '')}</h3>
+                    <div style="margin-bottom:10px;">${sev} ${cvss} ${cve} <span class="pt-badge medium">分类: ${esc(cat)}</span>
+                    ${e.cwe ? `<span class="pt-badge low">${esc(e.cwe)}</span>` : ''}
+                    </div>
+                    ${e.affected ? `<div style="margin:6px 0;"><b>影响范围:</b> ${esc(e.affected)}</div>` : ''}
+                    <div style="margin:6px 0;"><b>概述:</b> ${esc(e.overview || '')}</div>
+                    ${e.detection ? `<div style="margin:6px 0;"><b>检测方式:</b> ${esc(e.detection)}</div>` : ''}
+                    ${dcode}
+                    ${steps ? `<div style="margin:8px 0;"><b>利用步骤 (详细):</b><ol class="pt-list">${steps}</ol></div>` : ''}
+                    ${techs}
+                    ${payloads ? `<div style="margin:8px 0;"><b>Payload 字典:</b>${payloads}</div>` : ''}
+                    ${ecode}
+                    ${bypass ? `<div style="margin:8px 0;"><b>WAF绕过提示:</b><ul class="pt-list">${bypass}</ul></div>` : ''}
+                    ${post ? `<div style="margin:8px 0;"><b>后利用:</b><ul class="pt-list">${post}</ul></div>` : ''}
+                    ${refs ? `<div style="margin:8px 0;"><b>参考:</b><ul class="pt-list">${refs}</ul></div>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        // ============ WAF绕过库加载 ============
+        document.querySelector('#form-bypass button[data-run="bypass_load"]').addEventListener('click', () => {
+            const cat = document.getElementById('bypass_category').value.trim();
+            const payload = document.getElementById('bypass_payload').value;
+            const depth = Number(document.getElementById('bypass_depth').value) || 2;
+            setRunning('form-bypass', true, '加载中...');
+            const resEl = document.querySelector('[data-result="bypass"]');
+            const body = {};
+            if (cat) body.category = cat;
+            if (payload) body.payload = payload;
+            if (depth) body.depth = depth;
+            ptFetch('/api/pentest/bypass', Object.keys(body).length ? body : undefined, Object.keys(body).length ? 'POST' : 'GET')
+                .then(data => {
+                    if (!data.ok) throw new Error(data.msg);
+                    renderResult(resEl, renderBypass(data.data));
+                })
+                .catch(err => renderResult(resEl, `<div style="color:#991b1b;">❌ 错误: ${esc(err.msg || err.message || err)}</div>`))
+                .finally(() => setRunning('form-bypass', false));
+        });
+
+        function renderBypass(d) {
+            const cats = d.categories || [];
+            let html = '';
+            if (cats.length) {
+                html += cats.map(c => {
+                    const techs = (c.techniques || []).map(t => `<div class="pt-exploit-block"><h4>${esc(t.title||'')}</h4>
+                        <div><b>原理:</b> ${esc(t.principle || '')}</div>
+                        ${t.example ? `<div style="margin-top:4px;"><b>示例:</b><div class="pt-code">${esc(t.example||'')}</div></div>` : ''}
+                        ${t.适用 ? `<div style="margin-top:4px;"><b>适用:</b> ${esc(t.适用 || '')}</div>` : ''}
+                        ${t.注意 ? `<div style="margin-top:4px;"><b>注意:</b> ${esc(t.注意 || '')}</div>` : ''}
+                    </div>`).join('');
+                    const pays = (c.payloads || []).slice(0, 100).map(p => `<div class="pt-code">${esc(String(p||''))}</div>`).join('');
+                    return `<div class="pt-card" style="margin:14px 0;">
+                        <h3 style="color:#9a3412;margin-bottom:6px;">${esc(c.name || '')}</h3>
+                        <div style="margin:6px 0;color:#555;">${esc(c.desc || '')}</div>
+                        ${techs}
+                        ${pays ? `<div style="margin-top:10px;"><b>内置 Payload 样例 (${(c.payloads||[]).length}个,显示前100):</b>${pays}</div>` : ''}
+                    </div>`;
+                }).join('');
+            }
+            if (d.generated_variants_count) {
+                const list = (d.generated_variants || []).slice(0, 200);
+                html += `<div class="pt-card"><h3 style="color:#111;margin-bottom:8px;">自动生成 Payload 绕过变体 (共 ${d.generated_variants_count} 个,显示前 ${list.length}):</h3>
+                    <div style="max-height:360px;overflow:auto;border:1px solid #eee;border-radius:4px;padding:8px;background:#fafafa;">
+                    ${list.map(p => `<div class="pt-code" style="margin:3px 0;padding:4px 8px;">${esc(p)}</div>`).join('')}
+                    </div>
+                    <div style="margin-top:8px;color:#666;">提示: 复制逐个尝试，或结合手工插入到原请求中，观察WAF拦截与响应变化定位可绕过的形式。</div>
+                </div>`;
+            }
+            return html || '<div style="color:#666;">未匹配，请尝试分类关键词：通用HTTP / SQLi / XSS / RCE / SSTI / SSRF / Upload / LFI</div>';
+        }
+
+        // ============ 工具总览 ============
+        let toolsLoaded = false;
+        function loadToolsList() {
+            if (toolsLoaded) return;
+            const resEl = document.querySelector('[data-result="tools"]');
+            ptFetch('/api/pentest/tools', undefined, 'GET')
+                .then(data => {
+                    if (!data.ok) throw new Error(data.msg);
+                    toolsLoaded = true;
+                    const groups = ['recon','scan','exploits','bypass'];
+                    const titles = { recon:'🔍 侦察 Recon (7+ API)', scan:'💉 漏洞扫描 (13种POC)', exploits:'⚔️ 漏洞利用库 (15+ 完整链)', bypass:'🔥 WAF绕过 (9大分类 + 自动变体)' };
+                    const html = groups.map(g => {
+                        const arr = data.data[g] || [];
+                        const rows = arr.map(t => {
+                            const params = (t.params || []).map(p => esc(p)).join(', ') || '-';
+                            const desc = t.desc || t.name || '';
+                            return `<tr><td><b>${esc(t.id || t.name || '')}</b></td>
+                                <td>${esc(t.name || t.desc || '')}</td>
+                                <td style="color:#555;font-size:12px;">${params}</td></tr>`;
+                        }).join('');
+                        return `<div class="pt-card"><h3 style="color:#111;margin-bottom:8px;">${titles[g] || g}</h3>
+                            <table class="pt-table"><thead><tr><th>ID/方法</th><th>说明</th><th>参数</th></tr></thead>
+                            <tbody>${rows}</tbody></table></div>`;
+                    }).join('');
+                    renderResult(resEl, `
+                        <div style="margin:8px 0 14px;font-size:13px;color:#555;">
+                            全部 API 前缀: <code style="background:#fef3c7;padding:2px 6px;border-radius:4px;">/api/pentest/</code>
+                            &nbsp;|&nbsp; 所有 POST API 返回格式统一: <code style="background:#dbeafe;padding:2px 6px;border-radius:4px;">{ ok, msg, disclaimer, data }</code>
+                        </div>
+                        ${html}
+                    `);
+                })
+                .catch(err => renderResult(resEl, `<div style="color:#991b1b;">❌ 加载工具列表失败: ${esc(err.message || err)}</div>`));
+        }
 
         // ============ 启动 ============
         checkStatus();

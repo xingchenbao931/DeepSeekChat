@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """
-DeepSeek GGUF 模型下载脚本
-从 ModelScope(魔搭社区)下载 DeepSeek-R1-Distill-Qwen-1.5B GGUF 量化模型
+GGUF 模型下载脚本
+从 ModelScope(魔搭社区)下载 Qwen2.5-3B-Instruct GGUF 量化模型
+(兼容 DeepSeekChat 框架, 基于同一家族的 Qwen 架构)
 """
 import os
 import sys
@@ -10,23 +11,29 @@ import urllib.error
 from pathlib import Path
 
 # ============ 模型信息 ============
-# DeepSeek-R1-Distill-Qwen-1.5B 是 DeepSeek 推理模型的蒸馏版
-# Q4_K_M 量化,体积约 1.1GB,适合 CPU 推理
-MODEL_NAME = "DeepSeek-R1-Distill-Qwen-1.5B-Q4_K_M.gguf"
+# Qwen2.5-3B-Instruct - 阿里千问官方 3B 参数对话模型
+# Q4_K_M 量化, 体积约 1.93GB, 适合 CPU 推理, 中文能力强
+MODEL_NAME = "qwen2.5-3b-it-Q4_K_M-LOT.gguf"
+MODEL_DISPLAY_NAME = "Qwen2.5-3B-Instruct Q4_K_M"
+MODEL_SIZE_GB = "1.93 GB"
 
-# ModelScope 下载地址 (国内速度快)
+# ModelScope 下载地址 (国内速度快, 实测可用)
+# 注意: 文件名中的下划线 _ 需要 URL 编码为 %5F
 MODELSCOPE_URL = (
-    "https://modelscope.cn/api/v1/models/"
-    "AI-ModelScope/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/"
-    "repo?Revision=master&FilePath="
-    + MODEL_NAME
+    "https://modelscope.cn/models/"
+    "okwinds/Qwen2.5-3B-Instruct-GGUF-V3-LOT/"
+    "resolve/master/"
+    "qwen2.5-3b-it-Q4%5FK%5FM-LOT.gguf"
 )
 
-# HuggingFace 镜像备用地址
-HF_MIRROR_URL = (
-    "https://hf-mirror.com/Qwen/DeepSeek-R1-Distill-Qwen-1.5B-GGUF/"
-    "resolve/main/" + MODEL_NAME
+# 备用: 官方 Qwen GGUF 仓库 (如果上面不可用)
+MODELSCOPE_URL_BACKUP = (
+    "https://modelscope.cn/models/"
+    "Qwen/Qwen2.5-3B-Instruct-GGUF/"
+    "resolve/master/"
+    "qwen2.5-3b-instruct-q4_k_m.gguf"
 )
+MODEL_NAME_BACKUP = "qwen2.5-3b-instruct-q4_k_m.gguf"
 
 # ============ 下载目录 ============
 SCRIPT_DIR = Path(__file__).parent
@@ -83,16 +90,26 @@ def main():
     print("=" * 60)
     print("  DeepSeekChat - 模型下载工具")
     print("=" * 60)
-    print(f"  模型名称: {MODEL_NAME}")
-    print(f"  量化版本: Q4_K_M (约 1.1 GB)")
-    print(f"  适合 CPU 推理,显存要求低")
+    print(f"  模型名称: {MODEL_DISPLAY_NAME}")
+    print(f"  量化版本: Q4_K_M (约 {MODEL_SIZE_GB})")
+    print(f"  适合 CPU 推理, 中文能力强")
     print("=" * 60)
 
-    # 检查是否已存在
+    # 检查是否已存在 (支持多个可能的文件名)
+    existing = None
+    for f in MODELS_DIR.glob("*.gguf"):
+        existing = f
+        break
     if TARGET_PATH.exists():
-        size_mb = TARGET_PATH.stat().st_size / (1024 * 1024)
-        print(f"\n模型已存在: {TARGET_PATH} ({size_mb:.1f} MB)")
-        choice = input("是否重新下载? (y/N): ").strip().lower()
+        existing = TARGET_PATH
+
+    if existing:
+        size_mb = existing.stat().st_size / (1024 * 1024)
+        print(f"\n模型已存在: {existing} ({size_mb:.1f} MB)")
+        try:
+            choice = input("是否重新下载? (y/N): ").strip().lower()
+        except EOFError:
+            choice = "n"
         if choice != "y":
             print("跳过下载。")
             return
@@ -104,10 +121,17 @@ def main():
     print("\n尝试从 ModelScope(魔搭社区)下载...")
     success = download_with_progress(MODELSCOPE_URL, TARGET_PATH)
 
-    # ModelScope 失败则尝试镜像
+    # 失败尝试备用地址
     if not success:
-        print("\nModelScope 下载失败,尝试 HuggingFace 镜像...")
-        success = download_with_progress(HF_MIRROR_URL, TARGET_PATH)
+        print("\n主下载源失败, 尝试备用官方仓库...")
+        backup_target = MODELS_DIR / MODEL_NAME_BACKUP
+        success = download_with_progress(MODELSCOPE_URL_BACKUP, backup_target)
+        if success:
+            # 如果备用下载成功,重命名为标准名
+            try:
+                backup_target.rename(TARGET_PATH)
+            except:
+                pass
 
     if success:
         size_mb = TARGET_PATH.stat().st_size / (1024 * 1024)
@@ -116,7 +140,7 @@ def main():
         print("\n现在可以运行 启动.bat 启动 DeepSeekChat 了!")
     else:
         print("\n所有下载源均失败,请手动下载模型:")
-        print(f"  1. 访问: https://modelscope.cn/models/AI-ModelScope/DeepSeek-R1-Distill-Qwen-1.5B-GGUF")
+        print(f"  1. 访问: https://modelscope.cn/models/okwinds/Qwen2.5-3B-Instruct-GGUF-V3-LOT/files")
         print(f"  2. 下载文件: {MODEL_NAME}")
         print(f"  3. 放置到: {MODELS_DIR}")
         sys.exit(1)
